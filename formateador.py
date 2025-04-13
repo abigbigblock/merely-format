@@ -31,3 +31,9 @@ async def formatear(request: Request):
 
     resultado += "¿Deseas filtrar por presentación, ingredientes o enfoque terapéutico?\n"
     return {"respuesta": resultado.strip()}
+import os
+import uvicorn
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run("formateador:app", host="0.0.0.0", port=port)
