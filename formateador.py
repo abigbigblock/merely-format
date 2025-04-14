@@ -38,3 +38,5 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     uvicorn.run("formateador:app", host="0.0.0.0", port=port)
 @app.get("/")
+def health_check():
+    return {"status": "ok"}
