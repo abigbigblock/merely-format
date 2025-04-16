@@ -1,45 +1,35 @@
 
 from fastapi import FastAPI, Request
-import re
+from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
 
 app = FastAPI()
+
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/formatear")
 async def formatear(request: Request):
     data = await request.json()
-    texto_crudo = data.get("respuesta", "")
-    bloques = texto_crudo.split("------------------------------")
+    productos = data.get("respuesta", [])
 
-    resultado = "### 🧴 I. PRODUCTOS RELACIONADOS CON TU SÍNTOMA\n\n"
-    for bloque in bloques:
-        if not bloque.strip():
-            continue
-        producto = re.search(r"Producto: (.+)", bloque)
-        descripcion = re.search(r"Descripción: (.+)", bloque)
-        uso = re.search(r"Uso sugerido: (.+)", bloque)
-        puntaje = re.search(r"Puntaje: (\d+)", bloque)
-        origen = re.search(r"Origen: (.+)", bloque)
+    if not productos:
+        return {"respuesta": "No tengo información registrada para ese caso. ¿Quieres intentar con otro síntoma o condición?"}
 
-        resultado += f"#### Producto: **{producto.group(1).strip() if producto else 'Sin nombre'}**\n"
-        if descripcion:
-            resultado += f"**Descripción:** {descripcion.group(1).strip()}\n"
-        if uso:
-            resultado += f"**Forma de uso:** {uso.group(1).strip()}\n"
-        if puntaje or origen:
-            resultado += f"**Puntaje:** {puntaje.group(1) if puntaje else '0'} — **Origen:** {origen.group(1) if origen else 'Desconocido'}\n"
-        resultado += "\n"
+    respuesta = "## **🧠 ANÁLISIS INTELIGENTE**\n"
+    respuesta += "Evaluamos productos con base en coincidencias reales con tu necesidad: descripción, campo oficial, frases relacionadas y coincidencia clínica por ingredientes.\n\n"
 
-    resultado += "¿Deseas filtrar por presentación, ingredientes o enfoque terapéutico?\n"
-    return {"respuesta": resultado.strip()}
-import os
-import uvicorn
+    for producto in productos:
+        respuesta += f"**Producto:** {producto['Producto']}\n"
+        respuesta += f"**Descripción:** {producto['Descripcion']}\n"
+        respuesta += f"**Uso sugerido:** {producto['Forma de uso']}\n"
+        respuesta += f"**Puntaje:** {producto['Puntaje']} — **Motivos:** {producto['Motivos']}\n"
+        respuesta += "-"*30 + "\n"
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    uvicorn.run("formateador:app", host="0.0.0.0", port=port)
-@app.get("/")
-def health_check():
-    return {"status": "ok"}
-@app.head("/")
-def health_check_head():
-    return {"status": "ok"}
+    return {"respuesta": respuesta}
