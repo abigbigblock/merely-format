@@ -1,37 +1,35 @@
 
 from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
 import json
 
 app = FastAPI()
 
-# CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 @app.post("/formatear")
 async def formatear(request: Request):
     data = await request.json()
-    productos = data.get("respuesta", [])
+    respuesta_raw = data.get("respuesta", "")
+
+    # Asegurar que la respuesta se convierte en lista de dicts
+    try:
+        productos = json.loads(respuesta_raw) if isinstance(respuesta_raw, str) else respuesta_raw
+    except Exception as e:
+        return {"respuesta": f"Error procesando la respuesta: {e}"}
+
+    if not isinstance(productos, list):
+        return {"respuesta": "Formato inesperado. Se esperaba una lista de productos."}
 
     if not productos:
-        return {"respuesta": "No tengo información registrada para ese caso. ¿Quieres intentar con otro síntoma o condición?"}
+        return {"respuesta": "No se encontraron productos relacionados con el síntoma."}
 
-    respuesta = "## **🧠 ANÁLISIS INTELIGENTE**\n"
-    respuesta += "Evaluamos productos con base en coincidencias reales con tu necesidad: descripción, campo oficial, frases relacionadas y coincidencia clínica por ingredientes.\n\n"
+    texto = "## **🧪 ANÁLISIS INTELIGENTE**\n"
+    texto += "Se detectaron productos con evidencia útil según descripción, recomendación, frases asociadas o ingredientes:\n\n"
 
-    productos = json.loads(productos)
     for producto in productos:
-        respuesta += f"**Producto:** {producto['Producto']}\n"
-        respuesta += f"**Descripción:** {producto['Descripcion']}\n"
-        respuesta += f"**Uso sugerido:** {producto['Forma de uso']}\n"
-        respuesta += f"**Puntaje:** {producto['Puntaje']} — **Motivos:** {producto['Motivos']}\n"
-        respuesta += "-"*30 + "\n"
+        texto += f"**Producto:** {producto.get('Producto', 'N/A')}\n"
+        texto += f"**Descripción:** {producto.get('Descripcion', 'N/A')}\n"
+        texto += f"**Forma de uso:** {producto.get('Forma de uso', 'N/A')}\n"
+        texto += f"**Puntaje:** {producto.get('Puntaje', 0)}\n"
+        texto += f"**Motivos:** {producto.get('Motivos', 'No especificado')}\n"
+        texto += "-" * 30 + "\n"
 
-    return {"respuesta": respuesta}
+    return {"respuesta": texto}
