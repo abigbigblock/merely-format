@@ -3,6 +3,10 @@ from fastapi import FastAPI, Request
 import json
 
 app = FastAPI()
+@app.get("/")
+async def raiz():
+    return {"mensaje": "Formateador activo y listo"}
+
 
 @app.post("/formatear")
 async def formatear(request: Request):
