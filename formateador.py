@@ -2,6 +2,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+import json
 
 app = FastAPI()
 
@@ -25,6 +26,7 @@ async def formatear(request: Request):
     respuesta = "## **🧠 ANÁLISIS INTELIGENTE**\n"
     respuesta += "Evaluamos productos con base en coincidencias reales con tu necesidad: descripción, campo oficial, frases relacionadas y coincidencia clínica por ingredientes.\n\n"
 
+    productos = json.loads(productos)
     for producto in productos:
         respuesta += f"**Producto:** {producto['Producto']}\n"
         respuesta += f"**Descripción:** {producto['Descripcion']}\n"
