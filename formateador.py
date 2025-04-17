@@ -1,12 +1,14 @@
 
 from fastapi import FastAPI, Request
 import json
+from fastapi.responses import PlainTextResponse
 
 app = FastAPI()
-@app.get("/")
-async def raiz():
-    return {"mensaje": "Formateador activo y listo"}
 
+@app.head("/")
+@app.get("/")
+async def root():
+    return PlainTextResponse("Merely Format está activo", status_code=200)
 
 @app.post("/formatear")
 async def formatear(request: Request):
