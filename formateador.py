@@ -1,41 +1,47 @@
-
 from fastapi import FastAPI, Request
-import json
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import JSONResponse
+import uvicorn
 
 app = FastAPI()
 
-@app.head("/")
-@app.get("/")
-async def root():
-    return PlainTextResponse("Merely Format está activo", status_code=200)
-
 @app.post("/formatear")
 async def formatear(request: Request):
-    data = await request.json()
-    respuesta_raw = data.get("respuesta", "")
-
-    # Asegurar que la respuesta se convierte en lista de dicts
     try:
-        productos = json.loads(respuesta_raw) if isinstance(respuesta_raw, str) else respuesta_raw
+        data = await request.json()
+        productos = data.get("respuesta", [])
+        
+        if isinstance(productos, str):
+            return JSONResponse(content={"respuesta": "No se pudo procesar la información recibida."})
+
+        respuesta = "## 🧪 ANÁLISIS INTELIGENTE\n"
+        respuesta += "Se detectaron productos con evidencia útil según descripción, recomendación, frases asociadas o ingredientes:\n\n"
+
+        for producto in productos:
+            nombre = producto.get("Producto", "Sin nombre")
+            descripcion = producto.get("Descripcion", "Sin descripción")
+            uso = producto.get("Forma de uso", "Sin instrucciones")
+            puntaje = producto.get("Puntaje", "No disponible")
+            motivos = producto.get("Motivos", "No especificados")
+
+            respuesta += f"### Producto: {nombre}\n"
+            respuesta += f"**Descripción:** {descripcion}\n"
+            respuesta += f"**Uso sugerido:** {uso}\n"
+            respuesta += f"**Puntaje:** {puntaje} — **Motivos:** {motivos}\n"
+            respuesta += "-" * 40 + "\n"
+
+        return JSONResponse(content={"respuesta": respuesta})
+    
     except Exception as e:
-        return {"respuesta": f"Error procesando la respuesta: {e}"}
+        return JSONResponse(content={"respuesta": f"Ocurrió un error al formatear la respuesta: {str(e)}"})
 
-    if not isinstance(productos, list):
-        return {"respuesta": "Formato inesperado. Se esperaba una lista de productos."}
+@app.get("/")
+async def home():
+    return {"mensaje": "Formateador de Merely activo."}
 
-    if not productos:
-        return {"respuesta": "No se encontraron productos relacionados con el síntoma."}
+@app.head("/")
+async def ping():
+    return
 
-    texto = "## **🧪 ANÁLISIS INTELIGENTE**\n"
-    texto += "Se detectaron productos con evidencia útil según descripción, recomendación, frases asociadas o ingredientes:\n\n"
 
-    for producto in productos:
-        texto += f"**Producto:** {producto.get('Producto', 'N/A')}\n"
-        texto += f"**Descripción:** {producto.get('Descripcion', 'N/A')}\n"
-        texto += f"**Forma de uso:** {producto.get('Forma de uso', 'N/A')}\n"
-        texto += f"**Puntaje:** {producto.get('Puntaje', 0)}\n"
-        texto += f"**Motivos:** {producto.get('Motivos', 'No especificado')}\n"
-        texto += "-" * 30 + "\n"
-
-    return {"respuesta": texto}
+if __name__ == "__main__":
+    uvicorn.run("formateador:app", host="0.0.0.0", port=10000)
